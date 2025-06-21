@@ -252,26 +252,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = lightElement.dataset.name;
             tooltip.textContent = name;
             
-            const rect = lightElement.getBoundingClientRect();
-            const isMobile = window.innerWidth <= 768;
-
             // Reset styles before applying new ones
             tooltip.style.top = '';
             tooltip.style.left = '';
             tooltip.style.bottom = '';
             tooltip.style.transform = '';
 
-            if (isMobile) {
-                // For bottom bar, position tooltip above the element
-                tooltip.style.left = `${rect.left + rect.width / 2}px`;
-                tooltip.style.top = `${rect.top - 10}px`; // 10px spacing
-                tooltip.style.transform = 'translate(-50%, -100%)';
-            } else {
-                const sideTabRect = sideTab.getBoundingClientRect();
-                tooltip.style.top = `${rect.top + rect.height / 2}px`;
-                tooltip.style.left = `${sideTabRect.right + 10}px`;
-                tooltip.style.transform = 'translateY(-50%)';
-            }
+            const rect = lightElement.getBoundingClientRect();
+            const sideTabRect = sideTab.getBoundingClientRect();
+            tooltip.style.top = `${rect.top + rect.height / 2}px`;
+            tooltip.style.left = `${sideTabRect.right + 10}px`;
+            tooltip.style.transform = 'translateY(-50%)';
             
             tooltip.classList.add('visible');
         };
@@ -291,6 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const handleMouseUp = (e) => {
             clearTimeout(pressTimer);
             if(isLongPress) {
+                // Use a slight delay to prevent the click event from firing on mobile after a long press
                 setTimeout(hideTooltip, 100);
             }
         };
@@ -350,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const margin = { 
             top: 40, 
             right: isMobile ? 40 : 80, 
-            bottom: 40, 
+            bottom: isMobile ? 60 : 40, 
             left: isMobile ? 40 : 80 
         };
 
@@ -368,7 +360,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const x = d3.scaleLinear().domain([0, 2]).range([0, width]);
         const xAxis = d3.axisBottom(x)
             .tickValues([0, 1, 2])
-            .tickFormat(d => ["Below Range", "Optimal", "Above Range"][d]);
+            .tickFormat(d => {
+                const labels = isMobile 
+                    ? ["Below", "Optimal", "Above"] 
+                    : ["Below Range", "Optimal", "Above Range"];
+                return labels[d];
+            });
         
         const xAxisGroup = svg.append("g")
             .attr("transform", `translate(0,${height})`)
@@ -512,14 +509,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function updateTabIcons() {
-        const isMobile = window.innerWidth <= 768;
         const isOpen = sideTab.classList.contains('open');
+        handleIcon.className = `fa-solid ${isOpen ? 'fa-chevron-left' : 'fa-chevron-right'}`;
+    }
 
-        if (isMobile) {
-            handleIcon.className = `fa-solid ${isOpen ? 'fa-chevron-down' : 'fa-chevron-up'}`;
-        } else {
-            handleIcon.className = `fa-solid ${isOpen ? 'fa-chevron-left' : 'fa-chevron-right'}`;
-        }
+    function setVh() {
+        document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
     }
 
     window.addEventListener('resize', () => {
@@ -527,8 +522,10 @@ document.addEventListener('DOMContentLoaded', () => {
             drawTimeline();
         }
         updateTabIcons();
+        setVh();
     });
 
     // Initial setup
     updateTabIcons();
+    setVh();
 }); 
