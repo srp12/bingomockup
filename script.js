@@ -233,13 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tabHandle.addEventListener('click', () => {
         sideTab.classList.toggle('open');
-        if (sideTab.classList.contains('open')) {
-            handleIcon.classList.remove('fa-chevron-right');
-            handleIcon.classList.add('fa-chevron-left');
-        } else {
-            handleIcon.classList.remove('fa-chevron-left');
-            handleIcon.classList.add('fa-chevron-right');
-        }
+        updateTabIcons();
     });
 
     lights.forEach(light => {
@@ -259,9 +253,25 @@ document.addEventListener('DOMContentLoaded', () => {
             tooltip.textContent = name;
             
             const rect = lightElement.getBoundingClientRect();
-            const sideTabRect = sideTab.getBoundingClientRect();
-            tooltip.style.top = `${rect.top + rect.height / 2}px`;
-            tooltip.style.left = `${sideTabRect.right + 10}px`;
+            const isMobile = window.innerWidth <= 768;
+
+            // Reset styles before applying new ones
+            tooltip.style.top = '';
+            tooltip.style.left = '';
+            tooltip.style.bottom = '';
+            tooltip.style.transform = '';
+
+            if (isMobile) {
+                // For bottom bar, position tooltip above the element
+                tooltip.style.left = `${rect.left + rect.width / 2}px`;
+                tooltip.style.top = `${rect.top - 10}px`; // 10px spacing
+                tooltip.style.transform = 'translate(-50%, -100%)';
+            } else {
+                const sideTabRect = sideTab.getBoundingClientRect();
+                tooltip.style.top = `${rect.top + rect.height / 2}px`;
+                tooltip.style.left = `${sideTabRect.right + 10}px`;
+                tooltip.style.transform = 'translateY(-50%)';
+            }
             
             tooltip.classList.add('visible');
         };
@@ -281,7 +291,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const handleMouseUp = (e) => {
             clearTimeout(pressTimer);
             if(isLongPress) {
-                // Use a slight delay to prevent the click event from firing on mobile after a long press
                 setTimeout(hideTooltip, 100);
             }
         };
@@ -502,9 +511,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    function updateTabIcons() {
+        const isMobile = window.innerWidth <= 768;
+        const isOpen = sideTab.classList.contains('open');
+
+        if (isMobile) {
+            handleIcon.className = `fa-solid ${isOpen ? 'fa-chevron-down' : 'fa-chevron-up'}`;
+        } else {
+            handleIcon.className = `fa-solid ${isOpen ? 'fa-chevron-left' : 'fa-chevron-right'}`;
+        }
+    }
+
     window.addEventListener('resize', () => {
         if (selectedLights.size > 0) {
             drawTimeline();
         }
+        updateTabIcons();
     });
+
+    // Initial setup
+    updateTabIcons();
 }); 
